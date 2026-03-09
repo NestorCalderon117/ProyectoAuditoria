@@ -118,8 +118,9 @@ model Patient {
   mrn         String   @unique @db.VarChar(50) // Medical Record Number
   nameEnc     String   @map("name_enc") @db.Text // Cifrado AES-256-CBC
   dobEnc      String   @map("dob_enc") @db.Text  // Cifrado
-  ssnEnc      String   @map("ssn_enc") @db.Text  // Cifrado
-  createdById Int      @map("created_by_id")
+  ssnEnc        String   @map("ssn_enc") @db.Text  // Cifrado
+  diagnosisEnc  String?  @map("diagnosis_enc") @db.Text // Cifrado AES-256-CBC
+  createdById   Int      @map("created_by_id")
   isDeleted   Boolean  @default(false) @map("is_deleted") // Soft delete
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
@@ -226,12 +227,14 @@ model SecurityIncident {
 }
 
 model RefreshToken {
-  id        Int      @id @default(autoincrement())
-  userId    Int      @map("user_id")
-  tokenHash String   @map("token_hash") @db.VarChar(255)
-  expiresAt DateTime @map("expires_at")
-  revoked   Boolean  @default(false)
-  createdAt DateTime @default(now()) @map("created_at")
+  id             Int      @id @default(autoincrement())
+  userId         Int      @map("user_id")
+  tokenHash      String   @map("token_hash") @db.VarChar(255)
+  expiresAt      DateTime @map("expires_at")
+  revoked        Boolean  @default(false)
+  lastActivityAt DateTime @default(now()) @map("last_activity_at")
+  deviceInfo     String?  @map("device_info") @db.VarChar(255)
+  createdAt      DateTime @default(now()) @map("created_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
