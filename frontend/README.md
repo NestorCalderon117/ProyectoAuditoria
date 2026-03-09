@@ -1,26 +1,26 @@
 # HealthTech Frontend (Next.js)
 
-Frontend panel for HIPAA compliance management.
+Panel frontend para la gestión de cumplimiento HIPAA.
 
-## Requirements
+## Requisitos
 
-- Node.js 22+
-- npm 10+
+- Node.js 24+
+- npm 11+
 
-## Environment
+## Entorno
 
-Create `frontend/.env` from `frontend/.env.example`.
+Crea `frontend/.env` a partir de `frontend/.env.example`.
 
-Main key:
+Clave principal:
 
 - `NEXT_PUBLIC_API_URL`
 
-Recommended values:
+Valores recomendados:
 
-- Local backend direct: `http://localhost:3001`
-- Docker + nginx proxy: `/api`
+- Backend local directo: `http://localhost:3001`
+- Docker + proxy nginx: `/api`
 
-## Run in Development
+## Ejecutar en Desarrollo
 
 ```bash
 cd frontend
@@ -28,17 +28,17 @@ npm install
 npm run dev
 ```
 
-Open: `http://localhost:3000`
+Abre: `http://localhost:3000`
 
-## Build and Start
+## Compilar e Iniciar
 
 ```bash
 npm run build
 npm run start
 ```
 
-## Notes
+## Notas
 
-- Access token is kept in memory (not localStorage).
-- Refresh flow relies on `httpOnly` cookie from backend.
-- Authenticated routes are guarded by middleware (`proxy.ts`).
+- El token de acceso se mantiene en memoria (no en localStorage).
+- El flujo de renovación se basa en la cookie `httpOnly` del backend.
+- Las rutas autenticadas están protegidas por middleware (`proxy.ts`).

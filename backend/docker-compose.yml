@@ -69,19 +69,19 @@ services:
     networks:
       - public
 
-  s3-worker:
-    build:
-      context: ../s3_worker
-      dockerfile: Dockerfile
-    container_name: healthtech-s3-worker
-    restart: unless-stopped
-    env_file:
-      - ../s3_worker/.env.example
-    depends_on:
-      mysql:
-        condition: service_healthy
-    networks:
-      - internal
+  # s3-worker:
+  #   build:
+  #     context: ../s3_worker
+  #     dockerfile: Dockerfile
+  #   container_name: healthtech-s3-worker
+  #   restart: unless-stopped
+  #   env_file:
+  #     - ../s3_worker/.env.example
+  #   depends_on:
+  #     mysql:
+  #       condition: service_healthy
+  #   networks:
+  #     - internal
 
   loki:
     image: grafana/loki:3.4.3

@@ -5,7 +5,7 @@ import * as bcrypt from "bcryptjs";
 
 const DATABASE_URL = process.env["DATABASE_URL"];
 if (!DATABASE_URL) {
-  console.error("DATABASE_URL is not set");
+  console.error("DATABASE_URL no está configurada");
   process.exit(1);
 }
 
@@ -30,7 +30,7 @@ async function main() {
   for (const u of users) {
     const existing = await prisma.user.findUnique({ where: { email: u.email } });
     if (existing) {
-      console.log(`  User ${u.email} already exists. Skipping.`);
+      console.log(`  El usuario ${u.email} ya existe. Omitiendo.`);
       continue;
     }
     await prisma.user.create({
@@ -41,41 +41,41 @@ async function main() {
         passwordHistory: { create: { hash } },
       },
     });
-    console.log(`  ✓ Created ${u.role}: ${u.email}`);
+    console.log(`  ✓ Creado ${u.role}: ${u.email}`);
   }
 
   // ── 2. Controles HIPAA ─────────────────────────────
 
   const hipaaControls = [
-    // Administrative Safeguards
-    { safeguardType: "Administrative" as const, controlCode: "164.308(a)(1)", description: "Security Management Process — Policies and procedures to prevent, detect, contain, and correct security violations", status: "Implemented" as const },
-    { safeguardType: "Administrative" as const, controlCode: "164.308(a)(2)", description: "Assigned Security Responsibility — Identify the security official responsible for developing and implementing policies", status: "Implemented" as const },
-    { safeguardType: "Administrative" as const, controlCode: "164.308(a)(3)", description: "Workforce Security — Policies and procedures to ensure workforce members have appropriate access to ePHI", status: "Implemented" as const },
-    { safeguardType: "Administrative" as const, controlCode: "164.308(a)(4)", description: "Information Access Management — Policies and procedures for authorizing access to ePHI", status: "Implemented" as const },
-    { safeguardType: "Administrative" as const, controlCode: "164.308(a)(5)", description: "Security Awareness and Training — Security awareness and training program for all workforce members", status: "PartiallyImplemented" as const },
-    { safeguardType: "Administrative" as const, controlCode: "164.308(a)(6)", description: "Security Incident Procedures — Policies and procedures to address security incidents", status: "Implemented" as const },
-    { safeguardType: "Administrative" as const, controlCode: "164.308(a)(7)", description: "Contingency Plan — Establish policies and procedures for responding to emergencies or failures", status: "PartiallyImplemented" as const },
-    { safeguardType: "Administrative" as const, controlCode: "164.308(a)(8)", description: "Evaluation — Perform periodic technical and nontechnical evaluations", status: "NotImplemented" as const },
+    // Resguardos Administrativos
+    { safeguardType: "Administrative" as const, controlCode: "164.308(a)(1)", description: "Proceso de Gestión de Seguridad — Políticas y procedimientos para prevenir, detectar, contener y corregir violaciones de seguridad", status: "Implemented" as const },
+    { safeguardType: "Administrative" as const, controlCode: "164.308(a)(2)", description: "Responsabilidad de Seguridad Asignada — Identificar al oficial de seguridad responsable del desarrollo e implementación de políticas", status: "Implemented" as const },
+    { safeguardType: "Administrative" as const, controlCode: "164.308(a)(3)", description: "Seguridad de la Fuerza Laboral — Políticas y procedimientos para asegurar que los miembros tengan acceso apropiado a ePHI", status: "Implemented" as const },
+    { safeguardType: "Administrative" as const, controlCode: "164.308(a)(4)", description: "Gestión del Acceso a la Información — Políticas y procedimientos para autorizar el acceso a ePHI", status: "Implemented" as const },
+    { safeguardType: "Administrative" as const, controlCode: "164.308(a)(5)", description: "Concienciación de Seguridad y Capacitación — Programa de concienciación y capacitación en seguridad para todos los miembros", status: "PartiallyImplemented" as const },
+    { safeguardType: "Administrative" as const, controlCode: "164.308(a)(6)", description: "Procedimientos de Incidentes de Seguridad — Políticas y procedimientos para abordar incidentes de seguridad", status: "Implemented" as const },
+    { safeguardType: "Administrative" as const, controlCode: "164.308(a)(7)", description: "Plan de Contingencia — Establecer políticas y procedimientos para responder a emergencias o fallas", status: "PartiallyImplemented" as const },
+    { safeguardType: "Administrative" as const, controlCode: "164.308(a)(8)", description: "Evaluación — Realizar evaluaciones técnicas y no técnicas periódicas", status: "NotImplemented" as const },
 
-    // Technical Safeguards
-    { safeguardType: "Technical" as const, controlCode: "164.312(a)(1)", description: "Access Control — Technical policies and procedures for allowing access only to authorized persons", status: "Implemented" as const },
-    { safeguardType: "Technical" as const, controlCode: "164.312(a)(2)(i)", description: "Unique User Identification — Assign a unique name and/or number for identifying and tracking user identity", status: "Implemented" as const },
-    { safeguardType: "Technical" as const, controlCode: "164.312(a)(2)(ii)", description: "Emergency Access Procedure — Establish procedures for obtaining necessary ePHI during an emergency", status: "NotImplemented" as const },
-    { safeguardType: "Technical" as const, controlCode: "164.312(a)(2)(iii)", description: "Automatic Logoff — Implement electronic procedures that terminate an electronic session after a period of inactivity", status: "Implemented" as const },
-    { safeguardType: "Technical" as const, controlCode: "164.312(a)(2)(iv)", description: "Encryption and Decryption — Implement a mechanism to encrypt and decrypt ePHI", status: "Implemented" as const },
-    { safeguardType: "Technical" as const, controlCode: "164.312(b)", description: "Audit Controls — Implement hardware, software, and/or procedural mechanisms to record and examine activity in systems", status: "Implemented" as const },
-    { safeguardType: "Technical" as const, controlCode: "164.312(c)(1)", description: "Integrity — Policies and procedures to protect ePHI from improper alteration or destruction", status: "Implemented" as const },
-    { safeguardType: "Technical" as const, controlCode: "164.312(c)(2)", description: "Mechanism to Authenticate ePHI — Implement electronic mechanisms to corroborate that ePHI has not been altered or destroyed", status: "PartiallyImplemented" as const },
-    { safeguardType: "Technical" as const, controlCode: "164.312(d)", description: "Person or Entity Authentication — Implement procedures to verify that a person or entity seeking access to ePHI is the one claimed", status: "Implemented" as const },
-    { safeguardType: "Technical" as const, controlCode: "164.312(e)(1)", description: "Transmission Security — Technical security measures to guard against unauthorized access to ePHI transmitted over networks", status: "Implemented" as const },
-    { safeguardType: "Technical" as const, controlCode: "164.312(e)(2)(i)", description: "Integrity Controls — Security measures to ensure ePHI is not improperly modified without detection during transmission", status: "Implemented" as const },
-    { safeguardType: "Technical" as const, controlCode: "164.312(e)(2)(ii)", description: "Encryption — Implement a mechanism to encrypt ePHI whenever deemed appropriate during transmission", status: "Implemented" as const },
+    // Resguardos Técnicos
+    { safeguardType: "Technical" as const, controlCode: "164.312(a)(1)", description: "Control de Acceso — Políticas y procedimientos técnicos para permitir acceso solo a personas autorizadas", status: "Implemented" as const },
+    { safeguardType: "Technical" as const, controlCode: "164.312(a)(2)(i)", description: "Identificación Única del Usuario — Asignar un nombre y/o número único para identificar y rastrear la identidad del usuario", status: "Implemented" as const },
+    { safeguardType: "Technical" as const, controlCode: "164.312(a)(2)(ii)", description: "Procedimiento de Acceso de Emergencia — Establecer procedimientos para obtener ePHI necesario durante una emergencia", status: "NotImplemented" as const },
+    { safeguardType: "Technical" as const, controlCode: "164.312(a)(2)(iii)", description: "Cierre de Sesión Automático — Implementar procedimientos electrónicos que terminen una sesión electrónica después de un período de inactividad", status: "Implemented" as const },
+    { safeguardType: "Technical" as const, controlCode: "164.312(a)(2)(iv)", description: "Cifrado y Descifrado — Implementar un mecanismo para cifrar y descifrar ePHI", status: "Implemented" as const },
+    { safeguardType: "Technical" as const, controlCode: "164.312(b)", description: "Controles de Auditoría — Implementar mecanismos de hardware, software y/o procedimientos para registrar y examinar actividad en sistemas", status: "Implemented" as const },
+    { safeguardType: "Technical" as const, controlCode: "164.312(c)(1)", description: "Integridad — Políticas y procedimientos para proteger ePHI de alteración o destrucción inadecuada", status: "Implemented" as const },
+    { safeguardType: "Technical" as const, controlCode: "164.312(c)(2)", description: "Mecanismo para Autenticar ePHI — Implementar mecanismos electrónicos para corroborar que ePHI no ha sido alterado o destruido", status: "PartiallyImplemented" as const },
+    { safeguardType: "Technical" as const, controlCode: "164.312(d)", description: "Autenticación de Persona o Entidad — Implementar procedimientos para verificar que una persona o entidad que busca acceso a ePHI es quien afirma ser", status: "Implemented" as const },
+    { safeguardType: "Technical" as const, controlCode: "164.312(e)(1)", description: "Seguridad de Transmisión — Medidas de seguridad técnica para proteger contra acceso no autorizado a ePHI transmitido sobre redes", status: "Implemented" as const },
+    { safeguardType: "Technical" as const, controlCode: "164.312(e)(2)(i)", description: "Controles de Integridad — Medidas de seguridad para asegurar que ePHI no sea modificado inadecuadamente sin detección durante la transmisión", status: "Implemented" as const },
+    { safeguardType: "Technical" as const, controlCode: "164.312(e)(2)(ii)", description: "Cifrado — Implementar un mecanismo para cifrar ePHI cuando se considere apropiado durante la transmisión", status: "Implemented" as const },
 
-    // Physical Safeguards
-    { safeguardType: "Physical" as const, controlCode: "164.310(a)(1)", description: "Facility Access Controls — Policies and procedures to limit physical access to electronic information systems", status: "PartiallyImplemented" as const },
-    { safeguardType: "Physical" as const, controlCode: "164.310(b)", description: "Workstation Use — Policies and procedures for proper functions, manner of performance, and physical attributes of workstations", status: "NotImplemented" as const },
-    { safeguardType: "Physical" as const, controlCode: "164.310(c)", description: "Workstation Security — Physical safeguards for workstations that access ePHI, restricting access to authorized users only", status: "NotImplemented" as const },
-    { safeguardType: "Physical" as const, controlCode: "164.310(d)(1)", description: "Device and Media Controls — Policies and procedures governing receipt and removal of hardware and electronic media containing ePHI", status: "PartiallyImplemented" as const },
+    // Resguardos Físicos
+    { safeguardType: "Physical" as const, controlCode: "164.310(a)(1)", description: "Controles de Acceso a Instalaciones — Políticas y procedimientos para limitar el acceso físico a sistemas de información electrónica", status: "PartiallyImplemented" as const },
+    { safeguardType: "Physical" as const, controlCode: "164.310(b)", description: "Uso de Estaciones de Trabajo — Políticas y procedimientos para funciones adecuadas, manera del desempeño y atributos físicos de estaciones de trabajo", status: "NotImplemented" as const },
+    { safeguardType: "Physical" as const, controlCode: "164.310(c)", description: "Seguridad de Estaciones de Trabajo — Resguardos físicos para estaciones de trabajo que accesan ePHI, restringiendo acceso solo a usuarios autorizados", status: "NotImplemented" as const },
+    { safeguardType: "Physical" as const, controlCode: "164.310(d)(1)", description: "Controles de Dispositivos y Medios — Políticas y procedimientos que rigen la recepción y remoción de hardware y medios electrónicos que contienen ePHI", status: "PartiallyImplemented" as const },
   ];
 
   for (const ctrl of hipaaControls) {
@@ -83,36 +83,36 @@ async function main() {
     if (existing) continue;
     await prisma.hipaaControl.create({ data: ctrl });
   }
-  console.log(`  ✓ Seeded ${hipaaControls.length} HIPAA controls`);
+  console.log(`  ✓ Sembrados ${hipaaControls.length} controles HIPAA`);
 
-  // ── 3. Sample Findings ────────────────────────────
+  // ── 3. Hallazgos de Ejemplo ────────────────────────────
 
   const auditor = await prisma.user.findUnique({ where: { email: "auditor@healthtech.com" } });
   const existingFindings = await prisma.auditFinding.count();
 
   if (existingFindings === 0 && auditor) {
     const findings = [
-      { category: "Technical" as const, severity: "High" as const, hipaaControlCode: "164.312(a)(2)(ii)", description: "Emergency access procedure not yet documented or implemented", status: "Open" as const, assignedToId: auditor.id },
-      { category: "Physical" as const, severity: "Medium" as const, hipaaControlCode: "164.310(b)", description: "Workstation use policy needs formal documentation and training", status: "Open" as const, assignedToId: auditor.id },
-      { category: "Administrative" as const, severity: "Low" as const, hipaaControlCode: "164.308(a)(5)", description: "Security awareness training program partially implemented — need quarterly schedule", status: "InProgress" as const, assignedToId: auditor.id },
-      { category: "Physical" as const, severity: "Medium" as const, hipaaControlCode: "164.310(c)", description: "Workstation security controls for remote access not enforced", status: "Open" as const },
-      { category: "Technical" as const, severity: "Critical" as const, hipaaControlCode: "164.312(c)(2)", description: "ePHI integrity verification mechanism needs full implementation", status: "Open" as const, assignedToId: auditor.id },
+      { category: "Technical" as const, severity: "High" as const, hipaaControlCode: "164.312(a)(2)(ii)", description: "Procedimiento de acceso de emergencia aún no documentado o implementado", status: "Open" as const, assignedToId: auditor.id },
+      { category: "Physical" as const, severity: "Medium" as const, hipaaControlCode: "164.310(b)", description: "Política de uso de estaciones de trabajo necesita documentación formal y capacitación", status: "Open" as const, assignedToId: auditor.id },
+      { category: "Administrative" as const, severity: "Low" as const, hipaaControlCode: "164.308(a)(5)", description: "Programa de capacitación de concienciación de seguridad parcialmente implementado — se necesita calendario trimestral", status: "InProgress" as const, assignedToId: auditor.id },
+      { category: "Physical" as const, severity: "Medium" as const, hipaaControlCode: "164.310(c)", description: "Controles de seguridad de estaciones de trabajo para acceso remoto no están aplicados", status: "Open" as const },
+      { category: "Technical" as const, severity: "Critical" as const, hipaaControlCode: "164.312(c)(2)", description: "Mecanismo de verificación de integridad de ePHI necesita implementación completa", status: "Open" as const, assignedToId: auditor.id },
     ];
 
     for (const f of findings) {
       await prisma.auditFinding.create({ data: f });
     }
-    console.log(`  ✓ Seeded ${findings.length} sample findings`);
+    console.log(`  ✓ Sembrados ${findings.length} hallazgos de ejemplo`);
   }
 
-  console.log("\n✅ Seed completed successfully.");
-  console.log(`  Default password for all users: ${password}`);
-  console.log("  ⚠ Change passwords after first login!\n");
+  console.log("\n Seed completado exitosamente.");
+  console.log(`  Contraseña predeterminada para todos los usuarios: ${password}`);
+  console.log("¡Cambiar contraseñas después del primer inicio de sesión!\n");
 }
 
 main()
   .catch((e) => {
-    console.error("Seed failed:", e);
+    console.error("Error en la siembra:", e);
     process.exit(1);
   })
   .finally(() => prisma.$disconnect());

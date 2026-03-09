@@ -1,26 +1,26 @@
 # HealthTech Backend (NestJS + Prisma)
 
-Backend API for the HIPAA compliance demo platform.
+API backend para la plataforma demo de cumplimiento HIPAA.
 
-## Requirements
+## Requisitos
 
-- Node.js 22+
-- npm 10+
-- Docker Desktop (for full stack)
+- Node.js 24+
+- npm 11+
+- Docker Desktop (para el stack completo)
 
-## Environment
+## Entorno
 
-Create `backend/.env` from `backend/.env.example` and fill real secrets.
+Crea `backend/.env` a partir de `backend/.env.example` y completa los secretos reales.
 
-Required keys:
+Claves requeridas:
 
 - `DATABASE_URL`
 - `JWT_SECRET`
-- `PHI_ENCRYPTION_KEY` (64 hex chars)
+- `PHI_ENCRYPTION_KEY` (64 caracteres hexadecimales)
 - `PASSWORD_EXPIRY_DAYS`
 - `SESSION_TIMEOUT_MINUTES`
 
-## Run Locally (without Docker)
+## Ejecutar localmente (sin Docker)
 
 ```bash
 cd backend
@@ -28,27 +28,27 @@ npm install
 npm run start:dev
 ```
 
-API default URL: `http://localhost:3001`
+URL predeterminada de la API: `http://localhost:3001`
 
-Swagger in dev: `http://localhost:3001/api/docs`
+Swagger en desarrollo: `http://localhost:3001/api/docs`
 
-## Run Full Stack with Docker Compose
+## Ejecutar el stack completo con Docker Compose
 
-From `backend/`:
+Desde `backend/`:
 
 ```bash
 docker compose up --build
 ```
 
-Services:
+Servicios:
 
-- `http://localhost` -> Nginx (frontend + `/api` proxy)
-- `http://localhost:3001` -> Backend direct
-- `http://localhost:3000` -> Frontend direct
+- `http://localhost` -> Nginx (frontend + proxy de `/api`)
+- `http://localhost:3001` -> Backend directo
+- `http://localhost:3000` -> Frontend directo
 - `http://localhost:3002` -> Grafana
 - `http://localhost:3100` -> Loki
 
-Stop:
+Detener:
 
 ```bash
 docker compose down
@@ -65,8 +65,8 @@ npm run test
 npm run test:e2e
 ```
 
-## Notes
+## Notas
 
-- Audit logging is enabled globally via interceptor.
-- Refresh token is stored in `httpOnly` cookie.
-- PHI fields are encrypted at application level before persistence.
+- El registro de auditoría está habilitado globalmente mediante un interceptor.
+- El refresh token se almacena en una cookie `httpOnly`.
+- Los campos PHI se cifran a nivel de aplicación antes de persistirse.
