@@ -29,9 +29,14 @@ export class AuthController {
     private config: ConfigService,
   ) {
     const isProduction = this.config.get('NODE_ENV') === 'production';
+    const cookieSecureEnv = this.config.get<string>('COOKIE_SECURE');
+    const cookieSecure =
+      cookieSecureEnv == null
+        ? isProduction
+        : cookieSecureEnv.toLowerCase() === 'true';
     this.cookieOptions = {
       httpOnly: true,
-      secure: isProduction,
+      secure: cookieSecure,
       sameSite: 'lax',
       path: '/',
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 dias
