@@ -16,7 +16,7 @@ export default function LoginPage() {
 
   const redirectAfterLogin = () => {
     const state = useAuthStore.getState();
-    router.push(state.passwordExpired ? "/profile" : "/dashboard");
+    router.replace(state.passwordExpired ? "/profile" : "/dashboard");
   };
 
   const handleLogin = async (e: React.FormEvent) => {

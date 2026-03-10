@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useCallback, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useRef, useCallback } from "react";
 import { useAuthStore } from "@/lib/store";
 import { Sidebar } from "@/components/sidebar";
 import { Loader2 } from "lucide-react";
@@ -14,9 +13,7 @@ export default function AuthenticatedLayout({
   children: React.ReactNode;
 }) {
   const { user, loading, loadUser, logout } = useAuthStore();
-  const router = useRouter();
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [mounted, setMounted] = useState(false);
 
   const resetTimer = useCallback(() => {
     if (timerRef.current) clearTimeout(timerRef.current);
@@ -27,17 +24,8 @@ export default function AuthenticatedLayout({
   }, [logout]);
 
   useEffect(() => {
-    setMounted(true);
     loadUser();
   }, [loadUser]);
-
-  useEffect(() => {
-    // Solo redirigir después de que el componente esté montado en el cliente
-    // y después de que loadUser haya intentado cargar el usuario
-    if (mounted && !loading && !user) {
-      router.replace("/login");
-    }
-  }, [mounted, loading, user, router]);
 
   useEffect(() => {
     const events = ["mousedown", "keydown", "scroll", "touchstart"] as const;
@@ -49,8 +37,7 @@ export default function AuthenticatedLayout({
     };
   }, [resetTimer]);
 
-  // Mostrar loading mientras carga
-  if (!mounted || loading) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -58,7 +45,6 @@ export default function AuthenticatedLayout({
     );
   }
 
-  // Mostrar loading mientras redirige
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
