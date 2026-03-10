@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/store";
 import { Sidebar } from "@/components/sidebar";
@@ -16,6 +16,7 @@ export default function AuthenticatedLayout({
   const { user, loading, loadUser, logout } = useAuthStore();
   const router = useRouter();
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [mounted, setMounted] = useState(false);
 
   const resetTimer = useCallback(() => {
     if (timerRef.current) clearTimeout(timerRef.current);
@@ -26,13 +27,17 @@ export default function AuthenticatedLayout({
   }, [logout]);
 
   useEffect(() => {
-    loadUser().then(() => {
-      // Después de intentar cargar el usuario (incluyendo refresh si es necesario)
-      if (!useAuthStore.getState().user && !useAuthStore.getState().loading) {
-        router.push("/login");
-      }
-    });
-  }, [loadUser, router]);
+    setMounted(true);
+    loadUser();
+  }, [loadUser]);
+
+  useEffect(() => {
+    // Solo redirigir después de que el componente esté montado en el cliente
+    // y después de que loadUser haya intentado cargar el usuario
+    if (mounted && !loading && !user) {
+      router.replace("/login");
+    }
+  }, [mounted, loading, user, router]);
 
   useEffect(() => {
     const events = ["mousedown", "keydown", "scroll", "touchstart"] as const;
@@ -44,7 +49,8 @@ export default function AuthenticatedLayout({
     };
   }, [resetTimer]);
 
-  if (loading) {
+  // Mostrar loading mientras carga
+  if (!mounted || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -52,6 +58,7 @@ export default function AuthenticatedLayout({
     );
   }
 
+  // Mostrar loading mientras redirige
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
