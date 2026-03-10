@@ -10,6 +10,20 @@ import { Plus, Pencil, Loader2, X } from "lucide-react";
 const INCIDENT_TYPES = ["Breach", "NearMiss", "SecurityEvent", "PolicyViolation"] as const;
 const INCIDENT_STATUSES = ["Open", "Investigating", "Resolved", "Closed"] as const;
 
+const typeTranslations: Record<string, string> = {
+  Breach: "Brecha de Seguridad",
+  NearMiss: "Casi Incidente",
+  SecurityEvent: "Evento de Seguridad",
+  PolicyViolation: "Violación de Política",
+};
+
+const statusTranslations: Record<string, string> = {
+  Open: "Abierto",
+  Investigating: "Investigando",
+  Resolved: "Resuelto",
+  Closed: "Cerrado",
+};
+
 const typeColor: Record<string, string> = {
   Breach: "bg-red-100 text-red-700",
   NearMiss: "bg-orange-100 text-orange-700",
@@ -139,7 +153,7 @@ export default function IncidentsPage() {
                   <td className="px-4 py-3 text-xs font-mono">#{inc.id}</td>
                   <td className="px-4 py-3">
                     <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${typeColor[inc.type]}`}>
-                      {inc.type}
+                      {typeTranslations[inc.type]}
                     </span>
                   </td>
                   <td className="px-4 py-3 max-w-[300px] truncate">{inc.description}</td>
@@ -148,7 +162,7 @@ export default function IncidentsPage() {
                   </td>
                   <td className="px-4 py-3">
                     <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusColor[inc.status]}`}>
-                      {inc.status}
+                      {statusTranslations[inc.status]}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-xs">{inc.reportedBy?.email ?? "—"}</td>
@@ -198,7 +212,7 @@ export default function IncidentsPage() {
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                   >
                     {INCIDENT_TYPES.map((t) => (
-                      <option key={t} value={t}>{t}</option>
+                      <option key={t} value={t}>{typeTranslations[t]}</option>
                     ))}
                   </select>
                 </div>
@@ -212,7 +226,7 @@ export default function IncidentsPage() {
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                   >
                     {INCIDENT_STATUSES.map((s) => (
-                      <option key={s} value={s}>{s}</option>
+                      <option key={s} value={s}>{statusTranslations[s]}</option>
                     ))}
                   </select>
                 </div>

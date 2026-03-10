@@ -13,6 +13,37 @@ import { Download, Loader2 } from "lucide-react";
 
 type RangePreset = "30d" | "90d" | "custom";
 
+// Traducciones de categorías de controles HIPAA
+const categoryTranslations: Record<string, string> = {
+  Administrative: "Administrativo",
+  Technical: "Técnico",
+  Physical: "Físico",
+};
+
+// Traducciones de estados de hallazgos
+const findingStatusTranslations: Record<string, string> = {
+  Open: "Abierto",
+  InProgress: "En Progreso",
+  Resolved: "Resuelto",
+  Closed: "Cerrado",
+};
+
+// Traducciones de tipos de incidentes
+const incidentTypeTranslations: Record<string, string> = {
+  Breach: "Brecha de Seguridad",
+  NearMiss: "Casi Incidente",
+  SecurityEvent: "Evento de Seguridad",
+  PolicyViolation: "Violación de Política",
+};
+
+// Traducciones de estados de incidentes
+const incidentStatusTranslations: Record<string, string> = {
+  Open: "Abierto",
+  Investigating: "Investigando",
+  Resolved: "Resuelto",
+  Closed: "Cerrado",
+};
+
 export default function ReportsPage() {
   const [loading, setLoading] = useState(true);
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
@@ -213,7 +244,7 @@ export default function ReportsPage() {
             <tbody>
               {Object.entries(summary.byCategory).map(([name, item]) => (
                 <tr key={name} className="border-b border-slate-100">
-                  <td className="py-2 pr-4">{name}</td>
+                  <td className="py-2 pr-4">{categoryTranslations[name] || name}</td>
                   <td className="py-2 pr-4">{item.total}</td>
                   <td className="py-2 pr-4">{item.implemented}</td>
                   <td className="py-2 pr-4 font-semibold">{item.percentage}%</td>
@@ -238,7 +269,7 @@ export default function ReportsPage() {
               <tbody>
                 {Object.entries(findingsByStatus).map(([status, count]) => (
                   <tr key={status} className="border-b border-slate-100">
-                    <td className="py-2 pr-4">{status}</td>
+                    <td className="py-2 pr-4">{findingStatusTranslations[status] || status}</td>
                     <td className="py-2 pr-4 font-semibold">{count}</td>
                   </tr>
                 ))}
@@ -265,7 +296,7 @@ export default function ReportsPage() {
               <tbody>
                 {Object.entries(incidentsByType).map(([type, count]) => (
                   <tr key={type} className="border-b border-slate-100">
-                    <td className="py-2 pr-4">{type}</td>
+                    <td className="py-2 pr-4">{incidentTypeTranslations[type] || type}</td>
                     <td className="py-2 pr-4 font-semibold">{count}</td>
                   </tr>
                 ))}
@@ -306,7 +337,7 @@ export default function ReportsPage() {
               <div key={item.id} className="border-b border-slate-100 pb-2">
                 <p className="text-slate-700">{item.description}</p>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  {item.type} - {item.status} - {new Date(item.createdAt).toLocaleDateString()}
+                  {incidentTypeTranslations[item.type] || item.type} - {incidentStatusTranslations[item.status] || item.status} - {new Date(item.createdAt).toLocaleDateString()}
                 </p>
               </div>
             ))}

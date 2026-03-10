@@ -2,6 +2,7 @@ import "dotenv/config";
 import { PrismaClient } from "../generated/prisma/client.js";
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 import * as bcrypt from "bcryptjs";
+import { createCipheriv, randomBytes } from "crypto";
 
 const DATABASE_URL = process.env["DATABASE_URL"];
 if (!DATABASE_URL) {
@@ -11,6 +12,29 @@ if (!DATABASE_URL) {
 
 const adapter = new PrismaMariaDb(DATABASE_URL);
 const prisma = new PrismaClient({ adapter });
+
+const PHI_ENCRYPTION_KEY = process.env["PHI_ENCRYPTION_KEY"];
+if (!PHI_ENCRYPTION_KEY) {
+  console.error("PHI_ENCRYPTION_KEY no está configurada");
+  process.exit(1);
+}
+
+const key = Buffer.from(PHI_ENCRYPTION_KEY, "hex");
+if (key.length !== 32) {
+  console.error("PHI_ENCRYPTION_KEY debe tener 32 bytes (64 caracteres hex)");
+  process.exit(1);
+}
+
+function encryptPhi(plaintext: string): string {
+  const iv = randomBytes(16);
+  const cipher = createCipheriv("aes-256-cbc", key, iv);
+  const encrypted = Buffer.concat([
+    cipher.update(plaintext, "utf8"),
+    cipher.final(),
+  ]);
+
+  return `${iv.toString("hex")}:${encrypted.toString("hex")}`;
+}
 
 async function main() {
   // ── 1. Usuarios ───────────────────────────────────────
@@ -102,7 +126,149 @@ async function main() {
     for (const f of findings) {
       await prisma.auditFinding.create({ data: f });
     }
-    console.log(`  ✓ Sembrados ${findings.length} hallazgos de ejemplo`);
+    console.log(`Sembrados ${findings.length} hallazgos de ejemplo`);
+  }
+
+  // ── 4. Pacientes de Ejemplo ────────────────────────────
+
+  const doctor = await prisma.user.findUnique({ where: { email: "doctor@healthtech.com" } });
+
+  const patients = [
+    {
+      mrn: "HT-MRN-0001",
+      nameEnc: "Maria Gonzalez",
+      dobEnc: "1984-02-14",
+      ssnEnc: "123-45-6789",
+      diagnosisEnc: "Hipertension arterial controlada",
+    },
+    {
+      mrn: "HT-MRN-0002",
+      nameEnc: "Carlos Ramirez",
+      dobEnc: "1972-09-03",
+      ssnEnc: "987-65-4321",
+      diagnosisEnc: "Diabetes mellitus tipo 2",
+    },
+    {
+      mrn: "HT-MRN-0003",
+      nameEnc: "Lucia Herrera",
+      dobEnc: "1991-11-22",
+      ssnEnc: "111-22-3333",
+      diagnosisEnc: "Asma persistente leve",
+    },
+  ];
+
+  if (doctor) {
+    let createdPatients = 0;
+    for (const p of patients) {
+      const existing = await prisma.patient.findUnique({ where: { mrn: p.mrn } });
+      if (existing) continue;
+
+      await prisma.patient.create({
+        data: {
+          mrn: p.mrn,
+          nameEnc: encryptPhi(p.nameEnc),
+          dobEnc: encryptPhi(p.dobEnc),
+          ssnEnc: encryptPhi(p.ssnEnc),
+          diagnosisEnc: encryptPhi(p.diagnosisEnc),
+          createdById: doctor.id,
+        },
+      });
+      createdPatients += 1;
+    }
+    console.log(`Sembrados ${createdPatients} pacientes de ejemplo`);
+  } else {
+    console.log("  ! No se encontraron usuarios DOCTOR para sembrar pacientes");
+  }
+
+  // ── 5. Registros Médicos de Ejemplo ───────────────────
+
+  const nurse = await prisma.user.findUnique({ where: { email: "nurse@healthtech.com" } });
+  const seededPatients = await prisma.patient.findMany({
+    where: { mrn: { in: ["HT-MRN-0001", "HT-MRN-0002", "HT-MRN-0003"] } },
+    select: { id: true, mrn: true },
+  });
+
+  if (nurse && seededPatients.length > 0) {
+    const medicalRecords = [
+      {
+        patientMrn: "HT-MRN-0001",
+        recordType: "ConsultaGeneral",
+        contentEnc: "Paciente estable, se mantiene tratamiento antihipertensivo.",
+      },
+      {
+        patientMrn: "HT-MRN-0002",
+        recordType: "Laboratorio",
+        contentEnc: "Hemoglobina glicosilada en 7.1%, ajustar dieta y control en 3 meses.",
+      },
+      {
+        patientMrn: "HT-MRN-0003",
+        recordType: "Urgencias",
+        contentEnc: "Episodio leve de broncoespasmo, responde a broncodilatador inhalado.",
+      },
+    ];
+
+    let createdMedicalRecords = 0;
+    for (const record of medicalRecords) {
+      const patient = seededPatients.find((p) => p.mrn === record.patientMrn);
+      if (!patient) continue;
+
+      const existing = await prisma.medicalRecord.findFirst({
+        where: {
+          patientId: patient.id,
+          recordType: record.recordType,
+        },
+      });
+      if (existing) continue;
+
+      await prisma.medicalRecord.create({
+        data: {
+          patientId: patient.id,
+          recordType: record.recordType,
+          contentEnc: encryptPhi(record.contentEnc),
+          accessedById: nurse.id,
+        },
+      });
+      createdMedicalRecords += 1;
+    }
+    console.log(`Sembrados ${createdMedicalRecords} registros médicos de ejemplo`);
+  } else {
+    console.log("  ! No se pudieron sembrar registros médicos (falta NURSE o pacientes)");
+  }
+
+  // ── 6. Incidentes de Seguridad de Ejemplo ─────────────
+
+  const admin = await prisma.user.findUnique({ where: { email: "admin@healthtech.com" } });
+  const existingIncidents = await prisma.securityIncident.count();
+
+  if (existingIncidents === 0) {
+    const incidents = [
+      {
+        type: "SecurityEvent" as const,
+        description: "Intentos de inicio de sesión fallidos repetidos en cuentas administrativas detectados por el SIEM.",
+        affectedCount: 3,
+        status: "Investigating" as const,
+        reportedById: admin?.id,
+      },
+      {
+        type: "PolicyViolation" as const,
+        description: "Uso de dispositivo USB no autorizado en estación clínica identificado por controles DLP.",
+        affectedCount: 1,
+        status: "Open" as const,
+        reportedById: admin?.id,
+      },
+      {
+        type: "NearMiss" as const,
+        description: "Correo con posible phishing fue reportado y bloqueado antes de interacción del usuario.",
+        affectedCount: 0,
+        status: "Resolved" as const,
+        reportedById: admin?.id,
+      },
+    ];
+
+    for (const incident of incidents) {
+      await prisma.securityIncident.create({ data: incident });
+    }
+    console.log(`  ✓ Sembrados ${incidents.length} incidentes de seguridad de ejemplo`);
   }
 
   console.log("\n Seed completado exitosamente.");
