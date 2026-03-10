@@ -1,6 +1,10 @@
 FROM node:22-alpine AS builder
 WORKDIR /app
 
+# Pass build-time environment variable
+ARG NEXT_PUBLIC_API_URL=/api
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+
 COPY package*.json ./
 RUN npm ci
 
