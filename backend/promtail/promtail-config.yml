@@ -25,6 +25,12 @@ scrape_configs:
         regex: '/(.*)'
         target_label: container
       - source_labels: ['__meta_docker_container_label_com_docker_compose_service']
+        regex: '(.+)'
+        target_label: service
+      - source_labels: ['__meta_docker_container_label_com_docker_compose_service', '__meta_docker_container_name']
+        separator: ';'
+        regex: '^;/(?:healthtech-)?(.*)$'
+        replacement: '$1'
         target_label: service
       - source_labels: ['__meta_docker_container_label_com_docker_compose_project']
         target_label: compose_project
