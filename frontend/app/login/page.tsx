@@ -16,7 +16,9 @@ export default function LoginPage() {
 
   const redirectAfterLogin = () => {
     const state = useAuthStore.getState();
-    router.replace(state.passwordExpired ? "/profile" : "/dashboard");
+    const targetUrl = state.passwordExpired ? "/profile" : "/dashboard";
+    // Use window.location to ensure cookie is propagated
+    window.location.href = targetUrl;
   };
 
   const handleLogin = async (e: React.FormEvent) => {
