@@ -112,10 +112,25 @@ services:
     networks:
       - internal
 
+  promtail:
+    image: grafana/promtail:3.4.3
+    container_name: healthtech-promtail
+    restart: unless-stopped
+    command: ["-config.file=/etc/promtail/promtail-config.yml"]
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./promtail/promtail-config.yml:/etc/promtail/promtail-config.yml:ro
+      - promtail_data:/tmp
+    depends_on:
+      - loki
+    networks:
+      - internal
+
 volumes:
   mysql_data:
   loki_data:
   grafana_data:
+  promtail_data:
 
 networks:
   public:
