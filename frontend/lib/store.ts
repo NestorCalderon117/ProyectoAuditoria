@@ -56,12 +56,21 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   loadUser: async () => {
+    set({ loading: true });
     try {
       const { data } = await api.get("/users/me");
       set({ user: data, loading: false });
-    } catch {
-      setAccessToken(null);
-      set({ user: null, loading: false });
+    } catch (error) {
+      // Try to refresh token once before giving up
+      try {
+        const { data: refreshData } = await api.post("/auth/refresh");
+        setAccessToken(refreshData.accessToken);
+        const { data } = await api.get("/users/me");
+        set({ user: data, loading: false });
+      } catch {
+        setAccessToken(null);
+        set({ user: null, loading: false });
+      }
     }
   },
 

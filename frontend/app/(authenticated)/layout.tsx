@@ -26,8 +26,13 @@ export default function AuthenticatedLayout({
   }, [logout]);
 
   useEffect(() => {
-    loadUser();
-  }, [loadUser]);
+    loadUser().then(() => {
+      // Después de intentar cargar el usuario (incluyendo refresh si es necesario)
+      if (!useAuthStore.getState().user && !useAuthStore.getState().loading) {
+        router.push("/login");
+      }
+    });
+  }, [loadUser, router]);
 
   useEffect(() => {
     const events = ["mousedown", "keydown", "scroll", "touchstart"] as const;
@@ -48,8 +53,11 @@ export default function AuthenticatedLayout({
   }
 
   if (!user) {
-    router.push("/login");
-    return null;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
   }
 
   return (
