@@ -8,9 +8,19 @@ import {
   Param,
   ParseIntPipe,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiParam,
+} from '@nestjs/swagger';
 import { UsersService } from './users.service.js';
-import { CreateUserDto, UpdateUserDto, ChangePasswordDto } from './dto/users.dto.js';
+import {
+  CreateUserDto,
+  UpdateUserDto,
+  ChangePasswordDto,
+} from './dto/users.dto.js';
 import { Roles, CurrentUser } from '../common/decorators/index.js';
 import { Role } from '../../generated/prisma/client.js';
 
@@ -22,7 +32,10 @@ export class UsersController {
 
   @Post()
   @Roles(Role.ADMIN)
-  @ApiOperation({ summary: 'Crear usuario', description: 'Crea un nuevo usuario con rol asignado. Solo ADMIN.' })
+  @ApiOperation({
+    summary: 'Crear usuario',
+    description: 'Crea un nuevo usuario con rol asignado. Solo ADMIN.',
+  })
   @ApiResponse({ status: 201, description: 'Usuario creado exitosamente' })
   @ApiResponse({ status: 409, description: 'El email ya está registrado' })
   @ApiResponse({ status: 403, description: 'Permisos insuficientes' })
@@ -32,14 +45,21 @@ export class UsersController {
 
   @Get()
   @Roles(Role.ADMIN)
-  @ApiOperation({ summary: 'Listar usuarios', description: 'Retorna todos los usuarios del sistema (sin campo password). Solo ADMIN.' })
+  @ApiOperation({
+    summary: 'Listar usuarios',
+    description:
+      'Retorna todos los usuarios del sistema (sin campo password). Solo ADMIN.',
+  })
   @ApiResponse({ status: 200, description: 'Lista de usuarios' })
   findAll() {
     return this.users.findAll();
   }
 
   @Get('me')
-  @ApiOperation({ summary: 'Obtener perfil propio', description: 'Retorna los datos del usuario autenticado.' })
+  @ApiOperation({
+    summary: 'Obtener perfil propio',
+    description: 'Retorna los datos del usuario autenticado.',
+  })
   @ApiResponse({ status: 200, description: 'Datos del usuario autenticado' })
   getMe(@CurrentUser() user: { id: number }) {
     return this.users.findOne(user.id);
@@ -57,8 +77,16 @@ export class UsersController {
 
   @Patch(':id')
   @Roles(Role.ADMIN)
-  @ApiOperation({ summary: 'Actualizar usuario', description: 'Modifica email, rol o estado activo de un usuario. Solo ADMIN.' })
-  @ApiParam({ name: 'id', type: Number, description: 'ID del usuario a modificar' })
+  @ApiOperation({
+    summary: 'Actualizar usuario',
+    description:
+      'Modifica email, rol o estado activo de un usuario. Solo ADMIN.',
+  })
+  @ApiParam({
+    name: 'id',
+    type: Number,
+    description: 'ID del usuario a modificar',
+  })
   @ApiResponse({ status: 200, description: 'Usuario actualizado' })
   @ApiResponse({ status: 404, description: 'Usuario no encontrado' })
   update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateUserDto) {
@@ -66,9 +94,16 @@ export class UsersController {
   }
 
   @Patch('me/password')
-  @ApiOperation({ summary: 'Cambiar contraseña propia', description: 'El usuario autenticado cambia su propia contraseña. No puede reutilizar las últimas 5 contraseñas.' })
+  @ApiOperation({
+    summary: 'Cambiar contraseña propia',
+    description:
+      'El usuario autenticado cambia su propia contraseña. No puede reutilizar las últimas 5 contraseñas.',
+  })
   @ApiResponse({ status: 200, description: 'Contraseña cambiada exitosamente' })
-  @ApiResponse({ status: 400, description: 'Contraseña actual incorrecta o reuso de contraseña reciente' })
+  @ApiResponse({
+    status: 400,
+    description: 'Contraseña actual incorrecta o reuso de contraseña reciente',
+  })
   changePassword(
     @CurrentUser() user: { id: number },
     @Body() dto: ChangePasswordDto,
@@ -78,8 +113,16 @@ export class UsersController {
 
   @Delete(':id')
   @Roles(Role.ADMIN)
-  @ApiOperation({ summary: 'Desactivar usuario', description: 'Desactiva la cuenta del usuario (soft delete — nunca se elimina físicamente). Solo ADMIN.' })
-  @ApiParam({ name: 'id', type: Number, description: 'ID del usuario a desactivar' })
+  @ApiOperation({
+    summary: 'Desactivar usuario',
+    description:
+      'Desactiva la cuenta del usuario (soft delete — nunca se elimina físicamente). Solo ADMIN.',
+  })
+  @ApiParam({
+    name: 'id',
+    type: Number,
+    description: 'ID del usuario a desactivar',
+  })
   @ApiResponse({ status: 200, description: 'Usuario desactivado' })
   @ApiResponse({ status: 404, description: 'Usuario no encontrado' })
   remove(@Param('id', ParseIntPipe) id: number) {

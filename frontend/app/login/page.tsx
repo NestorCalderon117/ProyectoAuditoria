@@ -62,8 +62,7 @@ export default function LoginPage() {
             <div className="bg-primary/10 p-3 rounded-xl mb-4">
               <Shield className="h-10 w-10 text-primary" />
             </div>
-            <h1 className="text-2xl font-bold text-slate-800">HealthTech HIPAA</h1>
-            <p className="text-slate-500 text-sm mt-1">Sistema de Cumplimiento</p>
+            <h1 className="text-2xl font-bold text-slate-800">HealthTech Solutions</h1>
           </div>
 
           {error && (
@@ -145,9 +144,6 @@ export default function LoginPage() {
             </form>
           )}
         </div>
-        <p className="text-center text-xs text-slate-400 mt-6">
-          HIPAA Security Rule — 45 CFR Part 164
-        </p>
       </div>
     </div>
   );

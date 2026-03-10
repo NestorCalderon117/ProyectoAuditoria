@@ -7,7 +7,13 @@ import {
   Param,
   ParseIntPipe,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiParam,
+} from '@nestjs/swagger';
 import { HipaaControlsService } from './hipaa-controls.service.js';
 import {
   CreateHipaaControlDto,
@@ -24,7 +30,11 @@ export class HipaaControlsController {
 
   @Post()
   @Roles(Role.ADMIN, Role.AUDITOR)
-  @ApiOperation({ summary: 'Crear control HIPAA', description: 'Registra un nuevo control del HIPAA Security Rule en el catálogo. Solo ADMIN y AUDITOR.' })
+  @ApiOperation({
+    summary: 'Crear control HIPAA',
+    description:
+      'Registra un nuevo control del HIPAA Security Rule en el catálogo. Solo ADMIN y AUDITOR.',
+  })
   @ApiResponse({ status: 201, description: 'Control creado' })
   @ApiResponse({ status: 403, description: 'Permisos insuficientes' })
   create(@Body() dto: CreateHipaaControlDto) {
@@ -32,15 +42,27 @@ export class HipaaControlsController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Listar controles HIPAA', description: 'Retorna todos los controles HIPAA ordenados por código, con información del último revisor.' })
+  @ApiOperation({
+    summary: 'Listar controles HIPAA',
+    description:
+      'Retorna todos los controles HIPAA ordenados por código, con información del último revisor.',
+  })
   @ApiResponse({ status: 200, description: 'Lista de controles HIPAA' })
   findAll() {
     return this.hipaaControls.findAll();
   }
 
   @Get('summary')
-  @ApiOperation({ summary: 'Resumen de cumplimiento', description: 'Calcula el porcentaje de cumplimiento global y por categoría de salvaguarda (Administrative, Technical, Physical). Los controles parcialmente implementados cuentan como 50%.' })
-  @ApiResponse({ status: 200, description: 'Porcentaje global de cumplimiento, desglose por categoría {total, implemented, partial, percentage, byCategory}' })
+  @ApiOperation({
+    summary: 'Resumen de cumplimiento',
+    description:
+      'Calcula el porcentaje de cumplimiento global y por categoría de salvaguarda (Administrative, Technical, Physical). Los controles parcialmente implementados cuentan como 50%.',
+  })
+  @ApiResponse({
+    status: 200,
+    description:
+      'Porcentaje global de cumplimiento, desglose por categoría {total, implemented, partial, percentage, byCategory}',
+  })
   getComplianceSummary() {
     return this.hipaaControls.getComplianceSummary();
   }
@@ -56,9 +78,20 @@ export class HipaaControlsController {
 
   @Patch(':id')
   @Roles(Role.ADMIN, Role.AUDITOR)
-  @ApiOperation({ summary: 'Actualizar control HIPAA', description: 'Modifica el estado de implementación, evidencia o descripción de un control. Registra automáticamente la fecha de revisión y el revisor. Solo ADMIN y AUDITOR.' })
-  @ApiParam({ name: 'id', type: Number, description: 'ID del control a modificar' })
-  @ApiResponse({ status: 200, description: 'Control actualizado con fecha de revisión' })
+  @ApiOperation({
+    summary: 'Actualizar control HIPAA',
+    description:
+      'Modifica el estado de implementación, evidencia o descripción de un control. Registra automáticamente la fecha de revisión y el revisor. Solo ADMIN y AUDITOR.',
+  })
+  @ApiParam({
+    name: 'id',
+    type: Number,
+    description: 'ID del control a modificar',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Control actualizado con fecha de revisión',
+  })
   @ApiResponse({ status: 404, description: 'Control no encontrado' })
   update(
     @Param('id', ParseIntPipe) id: number,

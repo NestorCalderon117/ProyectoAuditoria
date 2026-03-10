@@ -6,7 +6,11 @@ import {
 } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { CreateUserDto, UpdateUserDto, ChangePasswordDto } from './dto/users.dto.js';
+import {
+  CreateUserDto,
+  UpdateUserDto,
+  ChangePasswordDto,
+} from './dto/users.dto.js';
 
 const PASSWORD_HISTORY_LIMIT = 5;
 
@@ -62,7 +66,8 @@ export class UsersService {
     });
 
     const valid = await bcrypt.compare(dto.currentPassword, user.password);
-    if (!valid) throw new BadRequestException('La contraseña actual es incorrecta');
+    if (!valid)
+      throw new BadRequestException('La contraseña actual es incorrecta');
 
     // Check last 5 passwords
     const history = await this.prisma.passwordHistory.findMany({

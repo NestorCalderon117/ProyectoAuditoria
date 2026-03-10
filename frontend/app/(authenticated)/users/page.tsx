@@ -8,6 +8,15 @@ import { Plus, Pencil, Trash2, Loader2, X } from "lucide-react";
 
 const ROLES = ["ADMIN", "DOCTOR", "NURSE", "AUDITOR", "LAB_EXTERNAL", "PHARMACIST"] as const;
 
+const roleTranslations: Record<string, string> = {
+  ADMIN: "Administrador",
+  DOCTOR: "Médico",
+  NURSE: "Enfermero/a",
+  AUDITOR: "Auditor",
+  LAB_EXTERNAL: "Laboratorio Externo",
+  PHARMACIST: "Farmacéutico/a",
+};
+
 const roleColor: Record<string, string> = {
   ADMIN: "bg-purple-100 text-purple-700",
   DOCTOR: "bg-blue-100 text-blue-700",
@@ -131,7 +140,7 @@ export default function UsersPage() {
                   <td className="px-6 py-3 font-medium">{u.email}</td>
                   <td className="px-6 py-3">
                     <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${roleColor[u.role]}`}>
-                      {u.role}
+                      {roleTranslations[u.role]}
                     </span>
                   </td>
                   <td className="px-6 py-3">
@@ -213,7 +222,7 @@ export default function UsersPage() {
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                 >
                   {ROLES.map((r) => (
-                    <option key={r} value={r}>{r}</option>
+                    <option key={r} value={r}>{roleTranslations[r]}</option>
                   ))}
                 </select>
               </div>

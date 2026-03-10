@@ -44,7 +44,7 @@ export function Sidebar() {
         <Shield className="h-8 w-8 text-primary-light" />
         <div>
           <h1 className="font-bold text-lg leading-tight">HealthTech</h1>
-          <span className="text-[11px] text-slate-400">HIPAA Compliance</span>
+          <span className="text-[11px] text-slate-400">Solutions</span>
         </div>
       </div>
 

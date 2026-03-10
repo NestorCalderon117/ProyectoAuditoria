@@ -17,7 +17,9 @@ export class PatientsService {
         nameEnc: this.encryption.encrypt(dto.name),
         dobEnc: this.encryption.encrypt(dto.dob),
         ssnEnc: this.encryption.encrypt(dto.ssn),
-        diagnosisEnc: dto.diagnosis ? this.encryption.encrypt(dto.diagnosis) : null,
+        diagnosisEnc: dto.diagnosis
+          ? this.encryption.encrypt(dto.diagnosis)
+          : null,
         createdById: userId,
       },
     });
@@ -46,7 +48,8 @@ export class PatientsService {
     if (dto.name) data.nameEnc = this.encryption.encrypt(dto.name);
     if (dto.dob) data.dobEnc = this.encryption.encrypt(dto.dob);
     if (dto.ssn) data.ssnEnc = this.encryption.encrypt(dto.ssn);
-    if (dto.diagnosis) data.diagnosisEnc = this.encryption.encrypt(dto.diagnosis);
+    if (dto.diagnosis)
+      data.diagnosisEnc = this.encryption.encrypt(dto.diagnosis);
 
     const updated = await this.prisma.patient.update({
       where: { id },
@@ -63,9 +66,14 @@ export class PatientsService {
     });
   }
 
-  private decryptPatient<T extends { nameEnc: string; dobEnc: string; ssnEnc: string; diagnosisEnc?: string | null }>(
-    patient: T,
-  ) {
+  private decryptPatient<
+    T extends {
+      nameEnc: string;
+      dobEnc: string;
+      ssnEnc: string;
+      diagnosisEnc?: string | null;
+    },
+  >(patient: T) {
     const { nameEnc, dobEnc, ssnEnc, diagnosisEnc, ...rest } = patient;
     return {
       ...rest,

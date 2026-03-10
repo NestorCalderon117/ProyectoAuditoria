@@ -96,6 +96,8 @@ export class AuditInterceptor implements NestInterceptor {
     // Fire-and-forget — no await so we don't slow the request
     this.prisma.auditLog
       .create({ data })
-      .catch((err: unknown) => console.error('Escritura de log de auditoría fallida:', err));
+      .catch((err: unknown) =>
+        console.error('Escritura de log de auditoría fallida:', err),
+      );
   }
 }

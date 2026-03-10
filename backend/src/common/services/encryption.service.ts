@@ -15,7 +15,10 @@ export class EncryptionService {
   encrypt(plaintext: string): string {
     const iv = randomBytes(16);
     const cipher = createCipheriv(this.algorithm, this.key, iv);
-    const encrypted = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()]);
+    const encrypted = Buffer.concat([
+      cipher.update(plaintext, 'utf8'),
+      cipher.final(),
+    ]);
     return iv.toString('hex') + ':' + encrypted.toString('hex');
   }
 
@@ -24,7 +27,10 @@ export class EncryptionService {
     const iv = Buffer.from(ivHex, 'hex');
     const encrypted = Buffer.from(encHex, 'hex');
     const decipher = createDecipheriv(this.algorithm, this.key, iv);
-    const decrypted = Buffer.concat([decipher.update(encrypted), decipher.final()]);
+    const decrypted = Buffer.concat([
+      decipher.update(encrypted),
+      decipher.final(),
+    ]);
     return decrypted.toString('utf8');
   }
 }

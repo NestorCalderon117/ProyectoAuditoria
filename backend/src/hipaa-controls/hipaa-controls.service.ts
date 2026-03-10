@@ -4,7 +4,10 @@ import {
   CreateHipaaControlDto,
   UpdateHipaaControlDto,
 } from './dto/hipaa-controls.dto.js';
-import { HipaaControlStatus, SafeguardType } from '../../generated/prisma/client.js';
+import {
+  HipaaControlStatus,
+  SafeguardType,
+} from '../../generated/prisma/client.js';
 
 @Injectable()
 export class HipaaControlsService {
@@ -59,7 +62,10 @@ export class HipaaControlsService {
       ((implemented + partial * 0.5) / total) * 100,
     );
 
-    const byCategory: Record<string, { total: number; implemented: number; percentage: number }> = {};
+    const byCategory: Record<
+      string,
+      { total: number; implemented: number; percentage: number }
+    > = {};
     for (const type of Object.values(SafeguardType)) {
       const catControls = controls.filter((c) => c.safeguardType === type);
       const catTotal = catControls.length;

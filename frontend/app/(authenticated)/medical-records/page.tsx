@@ -1,11 +1,20 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import api from "@/lib/api";
-import type { MedicalRecord } from "@/lib/types";
+import type { MedicalRecord, Patient } from "@/lib/types";
 import { useAuthStore } from "@/lib/store";
 import { PageHeader } from "@/components/page-header";
-import { Plus, Pencil, Trash2, Loader2, X, FileText } from "lucide-react";
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  Loader2,
+  X,
+  FileText,
+  Download,
+  ImageMinus,
+} from "lucide-react";
 
 const recordTypes = ["XRAY", "CT", "MRI", "LAB", "GENERAL"];
 
@@ -20,6 +29,7 @@ const typeColor: Record<string, string> = {
 export default function MedicalRecordsPage() {
   const { hasRole } = useAuthStore();
   const [records, setRecords] = useState<MedicalRecord[]>([]);
+  const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<MedicalRecord | null>(null);
@@ -31,6 +41,22 @@ export default function MedicalRecordsPage() {
   });
   const [saving, setSaving] = useState(false);
   const [patientFilter, setPatientFilter] = useState("");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [toast, setToast] = useState<{ message: string; kind: "success" | "error" } | null>(null);
+  const toastTimerRef = useRef<number | null>(null);
+
+  const showToast = useCallback((message: string, kind: "success" | "error") => {
+    setToast({ message, kind });
+
+    if (toastTimerRef.current) {
+      window.clearTimeout(toastTimerRef.current);
+    }
+
+    toastTimerRef.current = window.setTimeout(() => {
+      setToast(null);
+      toastTimerRef.current = null;
+    }, 3500);
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -46,14 +72,44 @@ export default function MedicalRecordsPage() {
     }
   }, [patientFilter]);
 
+  const loadPatients = useCallback(async () => {
+    try {
+      const { data } = await api.get("/patients");
+      setPatients(data);
+    } catch {
+      showToast("No se pudo cargar la lista de pacientes.", "error");
+    }
+  }, [showToast]);
+
+  useEffect(() => {
+    void loadPatients();
+  }, [loadPatients]);
+
   useEffect(() => {
     if (patientFilter) load();
     else setLoading(false);
   }, [patientFilter, load]);
 
+  useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) {
+        window.clearTimeout(toastTimerRef.current);
+      }
+    };
+  }, []);
+
+  const selectedPatient =
+    patients.find((p) => String(p.id) === patientFilter) ?? null;
+
   const openCreate = () => {
+    if (!selectedPatient) {
+      showToast("Selecciona un paciente valido antes de crear el registro.", "error");
+      return;
+    }
+
     setEditing(null);
-    setForm({ patientId: patientFilter, recordType: "GENERAL", content: "", s3ImageKey: "" });
+    setForm({ patientId: String(selectedPatient.id), recordType: "GENERAL", content: "", s3ImageKey: "" });
+    setSelectedFile(null);
     setShowForm(true);
   };
 
@@ -65,29 +121,82 @@ export default function MedicalRecordsPage() {
       content: r.content,
       s3ImageKey: r.s3ImageKey ?? "",
     });
+    setSelectedFile(null);
     setShowForm(true);
+  };
+
+  const uploadFileToRecord = async (recordId: number, file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    // Let the browser/axios set multipart boundary automatically.
+    await api.post(`/medical-records/${recordId}/image`, formData);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
     try {
+      let recordId: number;
+
       if (editing) {
-        await api.patch(`/medical-records/${editing.id}`, {
+        const { data } = await api.patch(`/medical-records/${editing.id}`, {
           recordType: form.recordType,
           content: form.content,
           ...(form.s3ImageKey && { s3ImageKey: form.s3ImageKey }),
         });
+        recordId = data.id ?? editing.id;
       } else {
-        await api.post("/medical-records", {
+        const { data } = await api.post("/medical-records", {
           patientId: parseInt(form.patientId, 10),
           recordType: form.recordType,
           content: form.content,
           ...(form.s3ImageKey && { s3ImageKey: form.s3ImageKey }),
         });
+        recordId = data.id;
       }
+
+      let uploadWarning: string | null = null;
+      if (selectedFile) {
+        try {
+          await uploadFileToRecord(recordId, selectedFile);
+        } catch (error: unknown) {
+          const message =
+            typeof error === "object" &&
+            error !== null &&
+            "response" in error &&
+            typeof (error as { response?: { data?: { message?: string | string[] } } }).response?.data?.message !== "undefined"
+              ? (error as { response?: { data?: { message?: string | string[] } } }).response?.data?.message
+              : undefined;
+
+          const normalized = Array.isArray(message) ? message.join(", ") : message;
+          uploadWarning = normalized ?? "No se pudo subir la imagen. Puedes reintentar desde Editar.";
+        }
+      }
+
       setShowForm(false);
-      load();
+      setSelectedFile(null);
+      await load();
+
+      if (uploadWarning) {
+        showToast(`Registro guardado, pero la imagen no se subio. Detalle: ${uploadWarning}`, "error");
+      } else {
+        showToast(
+          selectedFile
+            ? "Registro e imagen guardados correctamente."
+            : "Registro guardado correctamente.",
+          "success",
+        );
+      }
+    } catch (error: unknown) {
+      const message =
+        typeof error === "object" &&
+        error !== null &&
+        "response" in error &&
+        typeof (error as { response?: { data?: { message?: string | string[] } } }).response?.data?.message !== "undefined"
+          ? (error as { response?: { data?: { message?: string | string[] } } }).response?.data?.message
+          : "No se pudo guardar el registro.";
+      const normalized = Array.isArray(message) ? message.join(", ") : String(message);
+      showToast(normalized, "error");
     } finally {
       setSaving(false);
     }
@@ -99,16 +208,37 @@ export default function MedicalRecordsPage() {
     load();
   };
 
+  const handleDownloadImage = async (id: number) => {
+    const { data } = await api.get(`/medical-records/${id}/image-url`);
+    window.open(data.url, "_blank", "noopener,noreferrer");
+  };
+
+  const handleRemoveImage = async (id: number) => {
+    if (!confirm("¿Eliminar imagen asociada del registro?")) return;
+    await api.delete(`/medical-records/${id}/image`);
+    load();
+  };
+
   return (
     <>
+      {toast && (
+        <div
+          className={`fixed top-4 right-4 z-[60] rounded-lg px-4 py-2 text-sm font-medium text-white shadow-lg ${
+            toast.kind === "success" ? "bg-emerald-600" : "bg-rose-600"
+          }`}
+        >
+          {toast.message}
+        </div>
+      )}
+
       <PageHeader
         title="Registros Médicos"
-        description="Gestión de registros médicos con contenido cifrado (AES-256-CBC) y almacenamiento S3"
+        description="Gestión de registros médicos con contenido cifrado (AES-256-CBC) y almacenamiento en Azure Blob"
         action={
           hasRole("ADMIN", "DOCTOR") && (
             <button
               onClick={openCreate}
-              disabled={!patientFilter}
+              disabled={!selectedPatient}
               className="flex items-center gap-2 bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-lg text-sm font-medium transition disabled:opacity-50"
             >
               <Plus className="h-4 w-4" />
@@ -120,24 +250,27 @@ export default function MedicalRecordsPage() {
 
       {/* Patient Filter */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 mb-6">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 flex-wrap">
           <label className="text-sm font-medium text-slate-700">
-            ID del Paciente:
+            Paciente:
           </label>
-          <input
-            type="number"
+          <select
             value={patientFilter}
             onChange={(e) => setPatientFilter(e.target.value)}
-            placeholder="Ingrese el ID del paciente"
-            className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none text-sm w-48"
-          />
-          <button
-            onClick={load}
-            disabled={!patientFilter}
-            className="bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-lg text-sm font-medium transition disabled:opacity-50"
+            className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none text-sm min-w-80"
           >
-            Buscar
-          </button>
+            <option value="">Seleccione un paciente</option>
+            {patients.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.mrn} - {p.name}
+              </option>
+            ))}
+          </select>
+          {selectedPatient && (
+            <span className="text-xs text-slate-500">
+              Seleccionado: {selectedPatient.mrn}
+            </span>
+          )}
         </div>
       </div>
 
@@ -148,7 +281,7 @@ export default function MedicalRecordsPage() {
       ) : !patientFilter ? (
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-12 text-center">
           <FileText className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-          <p className="text-slate-500">Ingrese un ID de paciente para ver sus registros médicos</p>
+          <p className="text-slate-500">Selecciona un paciente para ver sus registros médicos</p>
         </div>
       ) : (
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
@@ -159,7 +292,7 @@ export default function MedicalRecordsPage() {
                   <th className="text-left px-6 py-3 font-semibold text-slate-600">ID</th>
                   <th className="text-left px-6 py-3 font-semibold text-slate-600">Tipo</th>
                   <th className="text-left px-6 py-3 font-semibold text-slate-600">Contenido</th>
-                  <th className="text-left px-6 py-3 font-semibold text-slate-600">S3 Key</th>
+                  <th className="text-left px-6 py-3 font-semibold text-slate-600">Imagen (Blob Key)</th>
                   <th className="text-left px-6 py-3 font-semibold text-slate-600">Accedido por</th>
                   <th className="text-left px-6 py-3 font-semibold text-slate-600">Fecha</th>
                   {hasRole("ADMIN", "DOCTOR") && (
@@ -176,8 +309,8 @@ export default function MedicalRecordsPage() {
                         {r.recordType}
                       </span>
                     </td>
-                    <td className="px-6 py-3 max-w-[300px] truncate">{r.content}</td>
-                    <td className="px-6 py-3 text-xs text-slate-400 font-mono max-w-[150px] truncate">
+                    <td className="px-6 py-3 max-w-75 truncate">{r.content}</td>
+                    <td className="px-6 py-3 text-xs text-slate-400 font-mono max-w-37.5 truncate">
                       {r.s3ImageKey ?? "—"}
                     </td>
                     <td className="px-6 py-3 text-xs">
@@ -194,6 +327,24 @@ export default function MedicalRecordsPage() {
                         >
                           <Pencil className="h-4 w-4 inline" />
                         </button>
+                        {r.s3ImageKey && (
+                          <button
+                            onClick={() => handleDownloadImage(r.id)}
+                            className="text-slate-400 hover:text-blue-600 transition"
+                            title="Descargar imagen"
+                          >
+                            <Download className="h-4 w-4 inline" />
+                          </button>
+                        )}
+                        {hasRole("ADMIN", "DOCTOR") && r.s3ImageKey && (
+                          <button
+                            onClick={() => handleRemoveImage(r.id)}
+                            className="text-slate-400 hover:text-amber-600 transition"
+                            title="Eliminar imagen"
+                          >
+                            <ImageMinus className="h-4 w-4 inline" />
+                          </button>
+                        )}
                         {hasRole("ADMIN") && (
                           <button
                             onClick={() => handleDelete(r.id)}
@@ -235,14 +386,12 @@ export default function MedicalRecordsPage() {
               {!editing && (
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">
-                    ID del Paciente
+                    Paciente
                   </label>
                   <input
-                    required
-                    type="number"
-                    value={form.patientId}
-                    onChange={(e) => setForm({ ...form, patientId: e.target.value })}
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
+                    readOnly
+                    value={selectedPatient ? `${selectedPatient.mrn} - ${selectedPatient.name}` : ""}
+                    className="w-full px-4 py-2 border border-slate-300 rounded-lg bg-slate-50 text-slate-700 outline-none"
                   />
                 </div>
               )}
@@ -277,7 +426,7 @@ export default function MedicalRecordsPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">
-                  S3 Image Key <span className="text-slate-400">(opcional)</span>
+                  Blob Key <span className="text-slate-400">(opcional)</span>
                 </label>
                 <input
                   value={form.s3ImageKey}
@@ -285,6 +434,20 @@ export default function MedicalRecordsPage() {
                   className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
                   placeholder="MRN-00001/rec-001/img.dcm"
                 />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Archivo de Imagen <span className="text-slate-400">(PNG/JPG/DICOM)</span>
+                </label>
+                <input
+                  type="file"
+                  accept=".png,.jpg,.jpeg,.dcm,application/dicom,image/png,image/jpeg"
+                  onChange={(e) => setSelectedFile(e.target.files?.[0] ?? null)}
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
+                />
+                {selectedFile && (
+                  <p className="text-xs text-slate-500 mt-1">Seleccionado: {selectedFile.name}</p>
+                )}
               </div>
               <div className="flex justify-end gap-3 pt-2">
                 <button

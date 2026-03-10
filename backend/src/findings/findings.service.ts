@@ -42,7 +42,10 @@ export class FindingsService {
 
     const data: Record<string, unknown> = { ...dto };
     if (dto.dueDate) data.dueDate = new Date(dto.dueDate);
-    if (dto.status === FindingStatus.Closed || dto.status === FindingStatus.Remediated) {
+    if (
+      dto.status === FindingStatus.Closed ||
+      dto.status === FindingStatus.Remediated
+    ) {
       data.closedAt = new Date();
     }
 

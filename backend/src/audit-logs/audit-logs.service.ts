@@ -46,13 +46,28 @@ export class AuditLogsService {
 
   async exportCsv(query: QueryAuditLogsDto): Promise<string> {
     const data = await this.exportJson(query);
-    const headers = ['id', 'userId', 'action', 'resourceType', 'resourceId', 'ipAddress', 'userAgent', 'httpMethod', 'endpoint', 'statusCode', 'timestamp'];
+    const headers = [
+      'id',
+      'userId',
+      'action',
+      'resourceType',
+      'resourceId',
+      'ipAddress',
+      'userAgent',
+      'httpMethod',
+      'endpoint',
+      'statusCode',
+      'timestamp',
+    ];
     const rows = data.map((row: Record<string, unknown>) =>
-      headers.map((h) => {
-        const val = row[h];
-        const str = val instanceof Date ? val.toISOString() : String(val ?? '');
-        return `"${str.replace(/"/g, '""')}"`;
-      }).join(','),
+      headers
+        .map((h) => {
+          const val = row[h];
+          const str =
+            val instanceof Date ? val.toISOString() : String(val ?? '');
+          return `"${str.replace(/"/g, '""')}"`;
+        })
+        .join(','),
     );
     return [headers.join(','), ...rows].join('\n');
   }

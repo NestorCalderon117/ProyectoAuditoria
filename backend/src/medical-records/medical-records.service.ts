@@ -1,6 +1,12 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { EncryptionService } from '../common/services/encryption.service.js';
+import { BlobStorageService } from '../common/services/blob-storage.service.js';
 import {
   CreateMedicalRecordDto,
   UpdateMedicalRecordDto,
@@ -11,6 +17,7 @@ export class MedicalRecordsService {
   constructor(
     private prisma: PrismaService,
     private encryption: EncryptionService,
+    private blobStorage: BlobStorageService,
   ) {}
 
   async create(dto: CreateMedicalRecordDto, userId: number) {
@@ -68,8 +75,95 @@ export class MedicalRecordsService {
   }
 
   async remove(id: number) {
-    await this.findOne(id);
+    const record = await this.prisma.medicalRecord.findUnique({
+      where: { id },
+    });
+    if (!record) throw new NotFoundException('Registro medico no encontrado');
+
+    if (record.s3ImageKey) {
+      await this.blobStorage.deleteBlobIfExists(record.s3ImageKey);
+    }
+
     return this.prisma.medicalRecord.delete({ where: { id } });
+  }
+
+  async uploadImage(id: number, userId: number, file: Express.Multer.File) {
+    const record = await this.prisma.medicalRecord.findUnique({
+      where: { id },
+      include: { patient: { select: { mrn: true } } },
+    });
+
+    if (!record) throw new NotFoundException('Registro medico no encontrado');
+    if (!file || !file.buffer?.length) {
+      throw new BadRequestException('Archivo no enviado o vacio.');
+    }
+
+    const allowedMimeTypes = new Set([
+      'image/png',
+      'image/jpeg',
+      'image/jpg',
+      'application/dicom',
+      'application/octet-stream',
+    ]);
+
+    if (!allowedMimeTypes.has(file.mimetype)) {
+      throw new BadRequestException('Tipo de archivo no permitido.');
+    }
+
+    const safeOriginalName = file.originalname
+      .replace(/[^a-zA-Z0-9._-]/g, '_')
+      .slice(-120);
+    const key = `${record.patient.mrn}/record-${record.id}/${Date.now()}-${safeOriginalName}`;
+
+    try {
+      await this.blobStorage.uploadBuffer(key, file.buffer, file.mimetype);
+
+      if (record.s3ImageKey && record.s3ImageKey !== key) {
+        await this.blobStorage.deleteBlobIfExists(record.s3ImageKey);
+      }
+
+      const updated = await this.prisma.medicalRecord.update({
+        where: { id },
+        data: { s3ImageKey: key, accessedById: userId },
+      });
+
+      return this.decryptRecord(updated);
+    } catch {
+      throw new InternalServerErrorException(
+        'Error subiendo imagen a Azure Blob.',
+      );
+    }
+  }
+
+  async getImageSasUrl(id: number) {
+    const record = await this.prisma.medicalRecord.findUnique({
+      where: { id },
+    });
+    if (!record) throw new NotFoundException('Registro medico no encontrado');
+    if (!record.s3ImageKey) {
+      throw new NotFoundException('El registro no tiene imagen asociada.');
+    }
+
+    const sas = this.blobStorage.getReadSasUrl(record.s3ImageKey);
+    return { ...sas, key: record.s3ImageKey };
+  }
+
+  async removeImage(id: number, userId: number) {
+    const record = await this.prisma.medicalRecord.findUnique({
+      where: { id },
+    });
+    if (!record) throw new NotFoundException('Registro medico no encontrado');
+    if (!record.s3ImageKey) {
+      return { ok: true, message: 'El registro no tenia imagen asociada.' };
+    }
+
+    await this.blobStorage.deleteBlobIfExists(record.s3ImageKey);
+    await this.prisma.medicalRecord.update({
+      where: { id },
+      data: { s3ImageKey: null, accessedById: userId },
+    });
+
+    return { ok: true };
   }
 
   private decryptRecord<T extends { contentEnc: string }>(record: T) {

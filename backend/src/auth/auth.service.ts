@@ -94,7 +94,7 @@ export class AuthService {
       data: { mfaSecret: secret.base32 },
     });
 
-    const qrDataUrl = await QRCode.toDataURL(secret.otpauth_url!);
+    const qrDataUrl = await QRCode.toDataURL(secret.otpauth_url);
     return { secret: secret.base32, qrCode: qrDataUrl };
   }
 
@@ -121,7 +121,9 @@ export class AuthService {
       window: 2,
     });
     if (!verified) {
-      this.logger.warn(`MFA fallido para el usuario ${user.id} — token="${token}", time=${Date.now()}`);
+      this.logger.warn(
+        `MFA fallido para el usuario ${user.id} — token="${token}", time=${Date.now()}`,
+      );
       throw new UnauthorizedException('Código TOTP inválido');
     }
 
@@ -190,8 +192,10 @@ export class AuthService {
 
     const accessToken = this.jwt.sign(payload);
 
-    const refreshExpiresIn =
-      this.config.get<string>('JWT_REFRESH_EXPIRES_IN', '7d');
+    const refreshExpiresIn = this.config.get<string>(
+      'JWT_REFRESH_EXPIRES_IN',
+      '7d',
+    );
     const refreshToken = this.jwt.sign(payload, {
       expiresIn: refreshExpiresIn as any,
     });
